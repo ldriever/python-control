@@ -1515,12 +1515,12 @@ def clean_ss(sys, precision=10):
     ----------
     sys : LTI (StateSpace, or TransferFunction)
         LTI system whose data will be returned
-    precision: integer
+    precision : integer
         Number of decimals to be left unchanged in rounding
 
     Returns
     -------
-    out: StateSpace
+    out : StateSpace
         LTI StateSpace rounded to the desired precision
 
     Raises

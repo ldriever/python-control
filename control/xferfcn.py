@@ -63,6 +63,7 @@ from warnings import warn
 from itertools import chain
 from re import sub
 from .lti import LTI, timebaseEqual, timebase, isdtime
+from .statesp import StateSpace
 from . import config
 
 __all__ = ['TransferFunction', 'tf', 'ss2tf', 'tfdata']
@@ -1563,6 +1564,56 @@ def _clean_part(data):
                     data[i][j][k] = float(data[i][j][k])
 
     return data
+
+
+def clean_tf(sys, input=None, output=None, precision=10):
+    """
+    Rounds the elements of the desired transfer function. This removes small non-zero numbers that, for instance, are
+    a result of computational errors and can otherwise lead to problems. The function also removes cancelling poles
+    and zeros, similar to the control.minreal() function
+
+    Parameters
+    ----------
+    sys : LTI (StateSpace, or TransferFunction)
+        LTI system whose data will be returned
+    input : None
+        optionally an integer referring to the requested input (starting from 1)
+    output : None
+        optionally an integer referring to the requested output (starting from 1)
+    precision : integer
+        Number of decimals to be left unchanged in rounding
+
+    Returns
+    -------
+    out : TransferFunctino
+        LTI TransferFunction rounded to the desired precision
+
+    Raises
+    ------
+    TypeError
+        if sys is not a StateSpace or TransferFunction object
+    """
+    if (type(sys) is not TransferFunction) and (type(sys) is not StateSpace):
+        raise Exception("Neither a StateSpace nor TransferFunction was passed to 'sys'")
+
+    sys = tf(sys).minreal()
+    if input is not None and output is not None:
+        sys = sys[output - 1, input - 1]
+    elif output is not None:
+        sys = sys[output - 1, :]
+    elif input is not None:
+        sys = sys[:, input - 1]
+    num = np.round(sys.num, precision)
+    den = np.round(sys.den, precision)
+    for i in range(sys.outputs):
+        for j in range(sys.inputs):
+            test = True
+            while test:
+                if num[i][j][-1] == den[i][j][-1] == 0:
+                    num[i][j] = np.insert(num[i][j][:-1],0,0)
+                    den[i][j] = np.insert(den[i][j][:-1],0,0)
+                else: test = False
+    return tf(num,den)
 
 
 # Define constants to represent differentiation, unit delay
