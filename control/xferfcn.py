@@ -1593,8 +1593,9 @@ def clean_tf(sys, input=None, output=None, precision=10):
     TypeError
         if sys is not a StateSpace or TransferFunction object
     """
+
     if (type(sys) is not TransferFunction) and (type(sys) is not StateSpace):
-        raise Exception("Neither a StateSpace nor TransferFunction was passed to 'sys'")
+        raise TypeError("Neither a StateSpace nor TransferFunction was passed to 'sys'")
 
     sys = tf(sys).minreal()
     if input is not None and output is not None:

@@ -73,8 +73,9 @@ import scipy as sp              # SciPy library (used all over)
 import numpy as np              # NumPy library
 import warnings
 from .lti import LTI     # base class of StateSpace, TransferFunction
-from .statesp import _convertToStateSpace, _mimo2simo, _mimo2siso, ssdata
-from .lti import isdtime, isctime
+from .statesp import _convertToStateSpace, _mimo2simo, _mimo2siso, ssdata, StateSpace
+from .lti import isdtime, isctime, pole
+from .xferfcn import TransferFunction, tf, clean_tf
 
 __all__ = ['forced_response', 'step_response', 'step_info', 'initial_response',
            'impulse_response']
@@ -883,3 +884,57 @@ def _default_time_vector(sys, N=None, tfinal=None):
             N = int(np.clip(tfinal/ideal_dt, N_min_ct, N_max)) # N<-[N_min, N_max]
             
     return np.linspace(0, tfinal, N, endpoint=False)
+
+
+def fival(sys, forcing="step", input=1, output=1, stabilityCheck=False, precision=10):
+    """
+    Returns the final value of a state space or transfer function. It is based on the mathematical final value theorem
+    and is thus faster and avoids unnecessarily large time vectors. For MIMO systems one can prescribe which input and
+    output are desired.
+
+    Parameters
+    ----------
+    sys : LTI (StateSpace, or TransferFunction)
+        LTI system whose data will be returned
+    forcing: A SISO TransferFunction
+        Laplace transform of the forcingunction describing the input
+    input : integer
+        Refers to the requested input (starting from 1), 1 by default
+    output : integer
+        Refers to the requested output (starting from 1), 1 by default
+    stabilityCheck : bool
+        If True it is checked if the system is stable. The final value theorem gives
+        erroneous results for unstable systems
+    precision : integer
+        Number of decimals to be left unchanged in rounding
+
+    Returns
+    -------
+    out : float or inf
+        The final value of the system. inf has the correct sign
+
+    Raises
+    ------
+    TypeError
+        if sys is not a StateSpace or TransferFunction object
+    TypeError
+        if forcing is not a TransferFunction object
+    """
+
+    if (type(sys) is not TransferFunction) and (type(sys) is not StateSpace):
+        raise TypeError("Neither a StateSpace nor TransferFunction was passed to 'sys'")
+    if forcing != "step" and (type(forcing) is not TransferFunction):
+        raise TypeError("The input passed to 'forcing' is not a TransferFunction")
+
+    cleaned_sys = clean_tf(sys, input=input, output=output, precision=precision)
+    if stabilityCheck:
+        p = np.real(pole(cleaned_sys))
+        if len(p[p > 0]) != 0:
+            return print("Unstable system due to ", len(p[p > 0]), " poles in the right half of the complex plane")
+        if len(p[p == 0]) > 1:
+            return print("Unstable system due to ", len(p[p == 0]), " poles at the origin")
+    if forcing != "step":
+        cleaned_sys = cleaned_sys * forcing * tf([1, 0], [1])
+    if cleaned_sys.den[0][0][-1] == 0:
+        return np.inf * np.sign(cleaned_sys.num[0][0][-1])
+    return cleaned_sys.num[0][0][-1] / cleaned_sys.den[0][0][-1]
