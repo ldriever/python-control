@@ -62,6 +62,7 @@ import scipy as sp
 from scipy.signal import lti, cont2discrete
 from warnings import warn
 from .lti import LTI, timebase, timebaseEqual, isdtime
+from .xferfcn import TransferFunction
 from . import config
 from copy import deepcopy
 
@@ -1503,3 +1504,33 @@ def ssdata(sys):
     """
     ss = _convertToStateSpace(sys)
     return ss.A, ss.B, ss.C, ss.D
+
+
+def clean_ss(sys, precision=10):
+    """
+    Rounds the A, B, C and D matrices of a StateSpace function, removing small non-zero numbers that are, for instance,
+    a result of computational errors and that can otherwise lead to problems in future computations and analyses
+
+    Parameters
+    ----------
+    sys : LTI (StateSpace, or TransferFunction)
+        LTI system whose data will be returned
+    precision: integer
+        Number of decimals to be left unchanged in rounding
+
+    Returns
+    -------
+    out: StateSpace
+        LTI StateSpace rounded to the desired precision
+
+    Raises
+    ------
+    TypeError
+        if sys is not a StateSpace or TransferFunction object
+    """
+
+    if (type(sys) is not TransferFunction) and (type(sys) is not StateSpace):
+        raise TypeError("Neither a StateSpace nor TransferFunction was passed to 'sys'")
+    sys = ss(sys)
+    return ss(np.round(sys.A, precision), np.round(sys.B, precision), np.round(sys.C, precision),
+                np.round(sys.D, precision))
