@@ -64,6 +64,7 @@ from itertools import chain
 from re import sub
 from .lti import LTI, timebaseEqual, timebase, isdtime
 from .statesp import StateSpace
+from .timeresp import fival
 from . import config
 
 __all__ = ['TransferFunction', 'tf', 'ss2tf', 'tfdata']
@@ -1092,6 +1093,86 @@ class TransferFunction(LTI):
                         gain[i][j] = np.nan
         return np.squeeze(gain)
 
+    def clean(self, input=None, output=None, precision=10):
+        """
+        Rounds the elements of the transfer function. This removes
+        small non-zero numbers that, for instance, are a result of
+        computational errors and can otherwise lead to problems. The
+        function also removes cancelling poles and zeros, similar to
+        the control.minreal() function
+
+        Parameters
+        ----------
+        sys : LTI (StateSpace, or TransferFunction)
+            LTI system whose data will be returned
+        input : None
+            optionally an integer referring to the requested input (starting from 1)
+        output : None
+            optionally an integer referring to the requested output (starting from 1)
+        precision : integer
+            Number of decimals to be left unchanged in rounding
+
+        Returns
+        -------
+        out : TransferFunctino
+            LTI TransferFunction rounded to the desired precision
+        """
+        sys = self.minreal()
+        if input is not None and output is not None:
+            sys = sys[output - 1, input - 1]
+        elif output is not None:
+            sys = sys[output - 1, :]
+        elif input is not None:
+            sys = sys[:, input - 1]
+        num = np.round(sys.num, precision)
+        den = np.round(sys.den, precision)
+        for i in range(sys.outputs):
+            for j in range(sys.inputs):
+                test = True
+                while test:
+                    if num[i][j][-1] == den[i][j][-1] == 0:
+                        num[i][j] = np.insert(num[i][j][:-1], 0, 0)
+                        den[i][j] = np.insert(den[i][j][:-1], 0, 0)
+                    else:
+                        test = False
+        return tf(num, den)
+
+    def fival(self, forcing="step", input=1, output=1, stabilityCheck=False, precision=10):
+        """
+        Returns the final value of the TransferFunction. It is
+        based on the mathematical final value theorem and is thus
+        faster and avoids unnecessarily large time vectors. For MIMO
+        systems one can prescribe which input and output are desired.
+
+        Parameters
+        ----------
+        sys : LTI (StateSpace, or TransferFunction)
+            LTI system whose data will be returned
+        forcing: A SISO TransferFunction
+            Laplace transform of the forcingunction describing the input
+        input : integer
+            Refers to the requested input (starting from 1), 1 by default
+        output : integer
+            Refers to the requested output (starting from 1), 1 by default
+        stabilityCheck : bool
+            If True it is checked if the system is stable. The final value theorem gives
+            erroneous results for unstable systems
+        precision : integer
+            Number of decimals to be left unchanged in rounding
+
+        Returns
+        -------
+        out : float or inf
+            The final value of the system. inf has the correct sign
+
+        Raises
+        ------
+        TypeError
+            if forcing is not a TransferFunction object
+        """
+        return fival(self, forcing = forcing, input = input, output = output,\
+                     stabilityCheck = stabilityCheck, precision = precision)
+
 
 # c2d function contributed by Benjamin White, Oct 2012
 def _c2d_matched(sysC, Ts):
@@ -1568,9 +1649,11 @@ def _clean_part(data):
 
 def clean_tf(sys, input=None, output=None, precision=10):
     """
-    Rounds the elements of the desired transfer function. This removes small non-zero numbers that, for instance, are
-    a result of computational errors and can otherwise lead to problems. The function also removes cancelling poles
-    and zeros, similar to the control.minreal() function
+    Rounds the elements of the desired transfer function (which
+    is created if sys is a StateSpace). This removes small non-zero
+    numbers that, for instance, are a result of computational errors
+    and can otherwise lead to problems. The function also removes
+    cancelling poles and zeros, similar to the control.minreal() function
 
     Parameters
     ----------

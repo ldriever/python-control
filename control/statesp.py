@@ -63,6 +63,7 @@ from scipy.signal import lti, cont2discrete
 from warnings import warn
 from .lti import LTI, timebase, timebaseEqual, isdtime
 from .xferfcn import TransferFunction
+from .timeresp import fival
 from . import config
 from copy import deepcopy
 
@@ -931,6 +932,64 @@ but B has %i row(s)\n(output(s))." % (self.inputs, other.outputs))
             gain = np.tile(np.nan, (self.outputs, self.inputs))
         return np.squeeze(gain)
 
+    def clean(self, precision=10):
+        """
+        Rounds the A, B, C and D matrices of a StateSpace system, removing
+        small non-zero numbers that are, for instance, a result of computational
+        errors and that can otherwise lead to problems in future computations
+        and analyses
+
+        Parameters
+        ----------
+        sys : LTI (StateSpace)
+            LTI system whose data will be returned
+        precision : integer
+            Number of decimals to be left unchanged in rounding
+
+        Returns
+        -------
+        out : StateSpace
+            LTI StateSpace rounded to the desired precision
+        """
+        return ss(np.round(self.A, precision), np.round(self.B, precision), np.round(self.C, precision),
+                  np.round(self.D, precision))
+
+    def fival(self, forcing="step", input=1, output=1, stabilityCheck=False, precision=10):
+        """
+        Returns the final value of the StateSpace system. It is based on
+        the mathematical final value theorem and is thus faster and avoids
+        unnecessarily large time vectors. For MIMO systems one can prescribe
+        which input and output are desired.
+
+        Parameters
+        ----------
+        sys : LTI (StateSpace, or TransferFunction)
+            LTI system whose data will be returned
+        forcing: A SISO TransferFunction
+            Laplace transform of the forcingunction describing the input
+        input : integer
+            Refers to the requested input (starting from 1), 1 by default
+        output : integer
+            Refers to the requested output (starting from 1), 1 by default
+        stabilityCheck : bool
+            If True it is checked if the system is stable. The final value theorem gives
+            erroneous results for unstable systems
+        precision : integer
+            Number of decimals to be left unchanged in rounding
+
+        Returns
+        -------
+        out : float or inf
+            The final value of the system. inf has the correct sign
+
+        Raises
+        ------
+        TypeError
+            if forcing is not a TransferFunction object
+        """
+        return fival(self, forcing = forcing, input = input, output = output,\
+                     stabilityCheck = stabilityCheck, precision = precision)
+
 
 # TODO: add discrete time check
 def _convertToStateSpace(sys, **kw):
@@ -1508,8 +1567,10 @@ def ssdata(sys):
 
 def clean_ss(sys, precision=10):
     """
-    Rounds the A, B, C and D matrices of a StateSpace function, removing small non-zero numbers that are, for instance,
-    a result of computational errors and that can otherwise lead to problems in future computations and analyses
+    Rounds the A, B, C and D matrices of a StateSpace system, removing small
+    non-zero numbers that are, for instance, a result of computational errors
+    and that can otherwise lead to problems in future computations and analyses.
+    If sys is a TransferFunction it is first converted to a StateSpace
 
     Parameters
     ----------
@@ -1531,6 +1592,7 @@ def clean_ss(sys, precision=10):
 
     if (type(sys) is not TransferFunction) and (type(sys) is not StateSpace):
         raise TypeError("Neither a StateSpace nor TransferFunction was passed to 'sys'")
-    sys = ss(sys)
+    if (type(sys) is not StateSpace):
+        sys = ss(sys)
     return ss(np.round(sys.A, precision), np.round(sys.B, precision), np.round(sys.C, precision),
                 np.round(sys.D, precision))

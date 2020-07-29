@@ -888,9 +888,10 @@ def _default_time_vector(sys, N=None, tfinal=None):
 
 def fival(sys, forcing="step", input=1, output=1, stabilityCheck=False, precision=10):
     """
-    Returns the final value of a state space or transfer function. It is based on the mathematical final value theorem
-    and is thus faster and avoids unnecessarily large time vectors. For MIMO systems one can prescribe which input and
-    output are desired.
+    Returns the final value of a state space or transfer function.
+    It is based on the mathematical final value theorem and is thus
+    faster and avoids unnecessarily large time vectors. For MIMO
+    systems one can prescribe which input and output are desired.
 
     Parameters
     ----------
