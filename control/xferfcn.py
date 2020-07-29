@@ -1679,25 +1679,9 @@ def clean_tf(sys, input=None, output=None, precision=10):
 
     if (type(sys) is not TransferFunction) and (type(sys) is not StateSpace):
         raise TypeError("Neither a StateSpace nor TransferFunction was passed to 'sys'")
-
-    sys = tf(sys).minreal()
-    if input is not None and output is not None:
-        sys = sys[output - 1, input - 1]
-    elif output is not None:
-        sys = sys[output - 1, :]
-    elif input is not None:
-        sys = sys[:, input - 1]
-    num = np.round(sys.num, precision)
-    den = np.round(sys.den, precision)
-    for i in range(sys.outputs):
-        for j in range(sys.inputs):
-            test = True
-            while test:
-                if num[i][j][-1] == den[i][j][-1] == 0:
-                    num[i][j] = np.insert(num[i][j][:-1],0,0)
-                    den[i][j] = np.insert(den[i][j][:-1],0,0)
-                else: test = False
-    return tf(num,den)
+    if (type(sys) is not TransferFunction):
+        sys = tf(sys).minreal()
+    return sys.clean()
 
 
 # Define constants to represent differentiation, unit delay
