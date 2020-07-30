@@ -977,8 +977,9 @@ but B has %i row(s)\n(output(s))." % (self.inputs, other.outputs))
 
         Returns
         -------
-        out : float or inf
-            The final value of the system. inf has the correct sign
+        out : float, inf or None
+            The final value of the system. inf has the correct sign. None is returned
+            if stabilityCheck=True and the system is unstable
 
         Raises
         ------

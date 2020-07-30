@@ -1160,8 +1160,9 @@ class TransferFunction(LTI):
 
         Returns
         -------
-        out : float or inf
-            The final value of the system. inf has the correct sign
+        out : float, inf or None
+            The final value of the system. inf has the correct sign. None is returned
+            if stabilityCheck=True and the system is unstable
 
         Raises
         ------
@@ -1680,7 +1681,7 @@ def clean_tf(sys, input=None, output=None, precision=10):
         raise TypeError("Neither a StateSpace nor TransferFunction was passed to 'sys'")
     if (type(sys) is not TransferFunction):
         sys = tf(sys).minreal()
-    return sys.clean()
+    return sys.clean(input = input, output = output, precision = precision)
 
 
 # Define constants to represent differentiation, unit delay
