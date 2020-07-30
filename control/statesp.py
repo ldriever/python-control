@@ -62,8 +62,6 @@ import scipy as sp
 from scipy.signal import lti, cont2discrete
 from warnings import warn
 from .lti import LTI, timebase, timebaseEqual, isdtime
-from .xferfcn import TransferFunction
-from .timeresp import fival
 from . import config
 from copy import deepcopy
 
@@ -987,6 +985,7 @@ but B has %i row(s)\n(output(s))." % (self.inputs, other.outputs))
         TypeError
             if forcing is not a TransferFunction object
         """
+        from .timeresp import fival
         return fival(self, forcing = forcing, input = input, output = output,\
                      stabilityCheck = stabilityCheck, precision = precision)
 
@@ -1589,7 +1588,7 @@ def clean_ss(sys, precision=10):
     TypeError
         if sys is not a StateSpace or TransferFunction object
     """
-
+    from .xferfcn import TransferFunction
     if (type(sys) is not TransferFunction) and (type(sys) is not StateSpace):
         raise TypeError("Neither a StateSpace nor TransferFunction was passed to 'sys'")
     if (type(sys) is not StateSpace):

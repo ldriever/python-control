@@ -63,8 +63,6 @@ from warnings import warn
 from itertools import chain
 from re import sub
 from .lti import LTI, timebaseEqual, timebase, isdtime
-from .statesp import StateSpace
-from .timeresp import fival
 from . import config
 
 __all__ = ['TransferFunction', 'tf', 'ss2tf', 'tfdata']
@@ -1170,6 +1168,7 @@ class TransferFunction(LTI):
         TypeError
             if forcing is not a TransferFunction object
         """
+        from .timeresp import fival
         return fival(self, forcing = forcing, input = input, output = output,\
                      stabilityCheck = stabilityCheck, precision = precision)
 
@@ -1676,7 +1675,7 @@ def clean_tf(sys, input=None, output=None, precision=10):
     TypeError
         if sys is not a StateSpace or TransferFunction object
     """
-
+    from .statesp import StateSpace
     if (type(sys) is not TransferFunction) and (type(sys) is not StateSpace):
         raise TypeError("Neither a StateSpace nor TransferFunction was passed to 'sys'")
     if (type(sys) is not TransferFunction):

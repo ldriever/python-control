@@ -73,9 +73,8 @@ import scipy as sp              # SciPy library (used all over)
 import numpy as np              # NumPy library
 import warnings
 from .lti import LTI     # base class of StateSpace, TransferFunction
-from .statesp import _convertToStateSpace, _mimo2simo, _mimo2siso, ssdata, StateSpace
+from .statesp import _convertToStateSpace, _mimo2simo, _mimo2siso, ssdata
 from .lti import isdtime, isctime, pole
-from .xferfcn import TransferFunction, tf, clean_tf
 
 __all__ = ['forced_response', 'step_response', 'step_info', 'initial_response',
            'impulse_response']
@@ -921,7 +920,8 @@ def fival(sys, forcing="step", input=1, output=1, stabilityCheck=False, precisio
     TypeError
         if forcing is not a TransferFunction object
     """
-
+    from .statesp import StateSpace
+    from .xferfcn import TransferFunction, tf, clean_tf
     if (type(sys) is not TransferFunction) and (type(sys) is not StateSpace):
         raise TypeError("Neither a StateSpace nor TransferFunction was passed to 'sys'")
     if forcing != "step" and (type(forcing) is not TransferFunction):
