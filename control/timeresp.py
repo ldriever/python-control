@@ -932,7 +932,7 @@ def fival(sys, forcing="step", input=1, output=1, stabilityCheck=False, precisio
     if stabilityCheck:
         p = np.real(pole(cleaned_sys))
         if len(p[p > 0]) != 0:
-            return print("Unstable system due to ", len(p[p > 0]), " poles in the right half of the complex plane")
+            return print("Unstable system due to ", len(p[p > 0]), " pole(s) in the right half of the complex plane")
         if len(p[p == 0]) > 1:
             return print("Unstable system due to ", len(p[p == 0]), " poles at the origin")
     if forcing != "step":
